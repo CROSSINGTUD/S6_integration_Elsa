@@ -113,8 +113,8 @@ int main(int argc, char* argv[]) {
 	}, nullptr);
 
 
-	// w.navigate("https://www.julius-hardt.de/ComposableCrypto/");
-	w.navigate("https://localhost:44328/");
+	w.navigate("https://www.julius-hardt.de/ComposableCrypto/");
+	// w.navigate("https://localhost:44328/");
 	w.run();
 	return 0;
 }

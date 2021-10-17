@@ -2,8 +2,9 @@
 <h1>Components</h1>
 
 <form @onsubmit:preventDefault="true">
-    <button type="button" class="btn btn-light" @onclick="_ => TestData.LoadTestData()">Load samples</button>
-    or import components: <InputFile OnChange="@LoadFile" accept="application/json" class="form-control" />
+    @*<button type="button" class="btn btn-light" @onclick="_ => TestData.LoadTestData()">Load samples</button>*@
+    @*or import components:*@
+    <InputFile OnChange="@LoadFile" accept="application/json" class="form-control" />
 </form>
 
 @foreach ((string type, IList<ComponentDescription> descriptions) in ComponentRegistry.Descriptions)
