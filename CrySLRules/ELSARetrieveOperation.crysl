@@ -1,0 +1,13 @@
+SPEC de.tu_darmstadt.crossing.composable_crypto.components.custom.long_term_storage.ELSARetrieveOperation
+
+OBJECTS
+    de.tu_darmstadt.crossing.composable_crypto.components.custom.long_term_storage.ELSAClient client;
+    java.io.OutputStream outputStream;
+    java.util.UUID uuid;
+
+EVENTS
+    Get: getInstance(client);
+    Rtr: retrieveAndVerify(uuid, outputStream);
+
+ORDER
+    Get, Rtr

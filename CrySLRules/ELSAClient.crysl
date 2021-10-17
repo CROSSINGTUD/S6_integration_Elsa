@@ -1,0 +1,11 @@
+SPEC de.tu_darmstadt.crossing.composable_crypto.components.custom.long_term_storage.ELSAClient
+
+OBJECTS
+    de.tu_darmstadt.crossing.composable_crypto.components.custom.long_term_storage.ELSA elsa;
+    de.tu_darmstadt.crossing.composable_crypto.components.custom.long_term_storage.ELSAClient client;
+
+EVENTS
+    Get: client = getInstance(elsa);
+
+ORDER
+    Get

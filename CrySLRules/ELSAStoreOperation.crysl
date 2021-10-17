@@ -1,0 +1,14 @@
+SPEC de.tu_darmstadt.crossing.composable_crypto.components.custom.long_term_storage.ELSAStoreOperation
+
+OBJECTS
+    de.tu_darmstadt.crossing.composable_crypto.components.custom.long_term_storage.ELSAClient client;
+    java.io.InputStream inputStream;
+    java.util.UUID uuid;
+
+EVENTS
+    Get: getInstance(client);
+    Add: uuid = addFile(inputStream);
+    Str: store();
+
+ORDER
+    Get, Add, Str

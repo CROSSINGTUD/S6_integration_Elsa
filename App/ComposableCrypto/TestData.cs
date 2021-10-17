@@ -38,9 +38,9 @@ namespace ComposableCrypto
             AssumptionProfile assumptionProfile = new AssumptionProfile { Name = "(Default)" };
             assumptionProfile.Assumptions.Add("DLP.is-hard", true);
             assumptionProfile.Assumptions.Add("RSA.is-hard", true);
-            assumptionProfile.Assumptions.Add("1-KEA.holds", true);
+            // assumptionProfile.Assumptions.Add("1-KEA.holds", true);
             assumptionProfile.Assumptions.Add("model-tls-as-secure-channel", true);
-            assumptionProfile.Assumptions.Add("model-hash-functions-as-random-oracles", true);
+            // assumptionProfile.Assumptions.Add("model-hash-functions-as-random-oracles", true);
             AssumptionRegistry.RegisterAssumptionProfile(assumptionProfile);
 
             ComponentRegistry.RegisterComponent(ComponentDescription.Builder()

@@ -16,8 +16,8 @@ int WINAPI WinMain(HINSTANCE hInt, HINSTANCE hPrevInst, LPSTR lpCmdLine,
 #else
 int main(int argc, char* argv[]) {
 #endif
-	string begin_template_marker{ "Marker.beginGeneratedCode();" };
-	string end_template_marker{"\t\tMarker.endGeneratedCode();"};
+	string begin_template_marker{ "System.out.println(\"BEGIN GENERATED CONSTRUCTION CODE\");" };
+	string end_template_marker{"\t\tSystem.out.println(\"END GENERATED CONSTRUCTION CODE\");"};
 	cxxopts::Options options("CongniCrypt.ComposableCrypto Host", "A tool to generate and maintain cryptographic security solutions which comprise multiple, possibly nested, cryptographic components.");
 	options.add_options()
 		("a,assumptions", "Path to a directory that contains assumption profiles.", cxxopts::value<string>())

@@ -1,5 +1,6 @@
 package de.tu_darmstadt.crossing.composable_crypto.components.custom.long_term_storage;
 
+import de.tu_darmstadt.crossing.composable_crypto.core.ComponentConfiguration;
 import de.tu_darmstadt.crossing.composable_crypto.core.CryptographicComponentBuilder;
 import de.tu_darmstadt.crossing.composable_crypto.interfaces.*;
 
@@ -26,6 +27,8 @@ public class ELSA implements LongTermStorage {
         private final CryptographicComponentBuilder<? extends SignatureScheme> signatureSchemeBuilder;
         private final CryptographicComponentBuilder<? extends  TimestampScheme> timestampSchemeBuilder;
         private final CryptographicComponentBuilder<? extends VectorCommitmentScheme> vectorCommitmentSchemeBuilder;
+        private String evidenceServiceURL;
+        private String[] shareholderURLs;
 
         public Builder(CryptographicComponentBuilder<? extends TransportSecurity> transportSecurityBuilder, CryptographicComponentBuilder<? extends SecretSharingScheme> secretSharingSchemeBuilder, CryptographicComponentBuilder<? extends SignatureScheme> signatureSchemeBuilder, CryptographicComponentBuilder<? extends TimestampScheme> timestampSchemeBuilder, CryptographicComponentBuilder<? extends VectorCommitmentScheme> vectorCommitmentSchemeBuilder) {
             this.transportSecurityBuilder = transportSecurityBuilder;
@@ -33,6 +36,16 @@ public class ELSA implements LongTermStorage {
             this.signatureSchemeBuilder = signatureSchemeBuilder;
             this.timestampSchemeBuilder = timestampSchemeBuilder;
             this.vectorCommitmentSchemeBuilder = vectorCommitmentSchemeBuilder;
+        }
+
+        public Builder evidenceServiceURL(String evidenceServiceURL) {
+            this.evidenceServiceURL = evidenceServiceURL;
+            return this;
+        }
+
+        public Builder shareholderURLs(String[] shareholderURLs) {
+            this.shareholderURLs = shareholderURLs;
+            return this;
         }
 
         @Override
@@ -57,7 +70,7 @@ public class ELSA implements LongTermStorage {
     }
 
     @Override
-    public DataOwner createClient() {
+    public ELSAClient createClient() {
         return null;
     }
 
