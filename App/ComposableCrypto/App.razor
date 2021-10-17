@@ -1,0 +1,91 @@
+@using System.IO
+@inject IJSRuntime JS
+<div class="container-fluid">
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a href="#" class="nav-link @(selectedTab == AppArea.Assumptions ? "active" : string.Empty)" @onclick="_ => selectedTab = AppArea.Assumptions" @onclick:preventDefault="true">Assumptions</a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link @(selectedTab == AppArea.ComponentDescriptionList ? "active" : string.Empty)" @onclick="_ => selectedTab = AppArea.ComponentDescriptionList" @onclick:preventDefault="true">Components</a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link @(selectedTab == AppArea.ComponentTree ? "active" : string.Empty)" @onclick="_ => selectedTab = AppArea.ComponentTree" @onclick:preventDefault="true">Security Solution</a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link @(selectedTab == AppArea.Implementation ? "active" : string.Empty)" @onclick="_ => selectedTab = AppArea.Implementation" @onclick:preventDefault="true">Implementation</a>
+        </li>
+    </ul>
+
+    @if (selectedTab == AppArea.ComponentDescriptionList)
+    {
+        <ComposableCrypto.Components.ComponentDescriptionList />
+    }
+    else if (selectedTab == AppArea.Assumptions)
+    {
+        <ComposableCrypto.Components.AssumptionProfileList />
+    }
+    else if (selectedTab == AppArea.Implementation)
+    {
+        <ComposableCrypto.Components.Implementation Component="@securitySolution" />
+    }
+    else if (securitySolution is null)
+    {
+        <h2>Import</h2>
+        <form class="mb-3" @onsubmit:preventDefault="true">
+            <InputFile OnChange="@LoadFile" accept="application/json" class="form-control" />
+        </form>
+        <h2>Create</h2>
+        <ComposableCrypto.Components.AddComponentNode Parent="@null" Type="@null" OnAdd="SetRootComponent" />
+    }
+    else
+    {
+        <ComposableCrypto.Components.ComponentNode Component="@securitySolution" />
+        <h2>Export</h2>
+        <button type="button" @onclick:preventDefault="true" @onclick="ExportJson" class="btn btn-primary">Export</button>
+    }
+</div>
+<BlazoredToasts />
+
+@code {
+    private AppArea selectedTab = AppArea.ComponentTree;
+    private Component securitySolution;
+
+    enum AppArea
+    {
+        Assumptions,
+        ComponentDescriptionList,
+        ComponentTree,
+        Implementation
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await JS.InvokeVoidAsync("initializeNativeEnvironment");
+        TestData.LoadTestData();
+        string initialRootComponentName = await JS.InvokeAsync<string>("getInitialRootComponentName");
+        if (!string.IsNullOrEmpty(initialRootComponentName))
+        {
+            securitySolution = ComponentRegistry.CreateComponent(initialRootComponentName, null);
+        }
+        StateHasChanged();
+    }
+
+    private void SetRootComponent(Component component)
+    {
+        securitySolution = component;
+        StateHasChanged();
+    }
+
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        using Stream stream = e.File.OpenReadStream();
+        SetRootComponent(await Component.FromJsonAsync(stream));
+    }
+
+    private async Task ExportJson()
+    {
+        string json = securitySolution.ToJson();
+        await JS.InvokeVoidAsync("saveTextFile", json, "application/json;charset=utf-8", "security-solution.json");
+    }
+}

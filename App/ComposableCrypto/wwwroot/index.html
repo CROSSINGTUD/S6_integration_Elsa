@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ComposableCrypto</title>
+    <!-- Taken from https://blog.elmah.io/how-to-fix-blazor-wasm-base-path-problems/ -->
+    <base />
+    <script>
+        var path = window.location.pathname.split('/');
+        var base = document.getElementsByTagName('base')[0];
+        if (window.location.host.includes('localhost')) {
+            base.setAttribute('href', '/');
+        } else if (path.length > 2) {
+            base.setAttribute('href', '/' + path[1] + '/');
+        } else if (path[path.length - 1].length != 0) {
+            window.location.replace(window.location.origin + window.location.pathname + '/' + window.location.search);
+        }
+    </script>
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+    <link href="_content/Blazored.Toast/blazored-toast.min.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="ComposableCrypto.styles.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div id="app">Loading...</div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="js/filesaver/FileSaver.min.js"></script>
+    <script src="js/jszip/jszip.min.js"></script>
+    <script>
+        window.showTextPopup = function (text) {
+            var win = window.open("");
+            var pre = win.document.createElement('pre');
+            pre.innerText = text;
+            win.document.body.appendChild(pre);
+        }
+
+        window.exportDirectoryAsZip = function (files) {
+            var zip = new JSZip();
+            var rules = zip.folder("CrySLRules");
+            for (var i = 0; i < files.length; i++) {
+                rules.file(files[i].item1, files[i].item2);
+            }
+
+            zip.generateAsync({ type: "blob" }).then(function (blob) {
+                saveAs(blob, "CrySLRules.zip");
+            }, function (err) {
+                console.log(err);
+            });
+        }
+
+        window.saveTextFile = function (content, mimeType, fileName) {
+            var blob = new Blob([content], { type: mimeType });
+            saveAs(blob, fileName);
+        }
+
+        window.importAssumptionProfile = function (json) {
+            return DotNet.invokeMethodAsync("ComposableCrypto", "ImportAssumptionProfile", json);
+        }
+
+        window.importComponentDescriptions = function (json) {
+            return DotNet.invokeMethodAsync("ComposableCrypto", "ImportComponentDescriptions", json);
+        }
+
+        window.insertGeneratedCodeIntoSourceFile = async function (code) {
+            if (!window.runningInNativeEnvironment) return;
+
+            await window.ccNativeInsertGeneratedCodeIntoSourceFile(code);
+        }
+
+        window.initializeNativeEnvironment = async function () {
+            if (!window.runningInNativeEnvironment) return;
+
+            await window.ccNativeLoadAssumptions();
+            await window.ccNativeLoadComponentDescriptions();
+        }
+
+        if (typeof window.getInitialRootComponentName === 'undefined') {
+            window.getInitialRootComponentName = function () {
+                return null;
+            }
+        }
+    </script>
+    <script>
+        window.composableCrypto = {
+            specGenerators: {},
+            register: function (generator) {
+                this.specGenerators[generator.name] = generator;
+            }
+        };
+
+        window.generateSpecifications = function (securitySolution) {
+            securitySolution = JSON.parse(securitySolution);
+            console.log(securitySolution);
+            var specGenerator = window.composableCrypto.specGenerators[securitySolution.name];
+            console.log(specGenerator);
+            var result = null;
+            if (specGenerator) {
+                result = specGenerator.generate(window.composableCrypto.specGenerators, securitySolution.children);
+            } else {
+                result = {
+                    apis: {},
+                    computingNodes: {}
+                };
+            }
+
+            return JSON.stringify(result);
+        }
+
+        window.validateSpecification = function (securitySolution, existingApiSet) {
+            console.log(existingApiSet);
+
+            var warnings = [];
+            var errors = [];
+            var specGenerator = window.composableCrypto.specGenerators[securitySolution.name];
+            var result = null;
+            if (specGenerator) {
+                result = specGenerator.verify(window.composableCrypto.specGenerators, securitySolution.children, existingApiSet, warnings, errors);
+            } else {
+                result = {
+                    warnings: [],
+                    errors: []
+                };
+            }
+            return JSON.stringify(result);
+        }
+    </script>
+
+    <script src="js/components/ELSA.js"></script>
+    <script src="js/components/InteractiveTS.js"></script>
+    <script src="js/components/NonInteractiveTS.js"></script>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+
+</html>

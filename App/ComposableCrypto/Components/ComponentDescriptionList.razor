@@ -1,0 +1,78 @@
+﻿@using System.IO
+<h1>Components</h1>
+
+<form @onsubmit:preventDefault="true">
+    <button type="button" class="btn btn-light" @onclick="_ => TestData.LoadTestData()">Load samples</button>
+    or import components: <InputFile OnChange="@LoadFile" accept="application/json" class="form-control" />
+</form>
+
+@foreach ((string type, IList<ComponentDescription> descriptions) in ComponentRegistry.Descriptions)
+{
+    <h2>@type</h2>
+    <div style="display: flex">
+        @foreach (ComponentDescription description in descriptions)
+        {
+            <div class="card m-2" style="width: 36rem;">
+                <div class="card-body">
+                    <h4 class="card-title">@description.DisplayName</h4>
+                    <h5 class="card-subtitle mb-2 text-muted">@description.Name</h5>
+                
+                    @if (description.Children.Count > 0)
+                    {
+                        <h6>Children</h6>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Display name</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ((string name, ChildDescription childDescription) in description.Children)
+                                {
+                                    <tr>
+                                        <td>@name</td>
+                                        <td>@childDescription.DisplayName</td>
+                                        <td>@childDescription.Type</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+
+                    @if (description.Properties.Count > 0)
+                    {
+                        <h6>Security properties</h6>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Condition</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ((string name, Condition condition) in description.Properties)
+                                {
+                                    <tr>
+                                        <td>@name</td>
+                                        <td>@condition.ToString()</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private async Task LoadFile(InputFileChangeEventArgs e)
+    {
+        using Stream stream = e.File.OpenReadStream();
+        await ComposableCryptoImport.ImportComponentDescriptionsAsync(stream);
+        // StateHasChanged();
+    }
+}

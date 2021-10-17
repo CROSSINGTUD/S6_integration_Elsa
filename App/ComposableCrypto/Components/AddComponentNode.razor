@@ -1,0 +1,36 @@
+﻿<div class="card" style="width: 23rem;">
+    <div class="card-body">
+        <form @onsubmit="AddComponent" @onsubmit:preventDefault="true" style="display: flex">
+            <select @bind="componentToAdd" class="form-select" style="margin-right: 5px">
+                <option value=""></option>
+                @foreach(ComponentDescription description in ComponentRegistry.GetDescriptionsForType(Type))
+                {
+                    <option value="@description.Name">@description.DisplayName</option>
+                }
+            </select>
+            <button type="submit" class="btn btn-primary" disabled="@string.IsNullOrEmpty(componentToAdd)">Add</button>
+        </form>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Component Parent { get; set; }
+
+    [Parameter]
+    public string Type { get; set; }
+
+    [Parameter]
+    public Action<Component> OnAdd { get; set; }
+
+    private string componentToAdd;
+
+    private void AddComponent()
+    {
+        if (!string.IsNullOrEmpty(componentToAdd))
+        {
+            Component component = ComponentRegistry.CreateComponent(componentToAdd, Parent);
+            OnAdd(component);
+        }
+    }
+}

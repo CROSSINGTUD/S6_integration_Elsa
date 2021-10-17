@@ -1,0 +1,43 @@
+﻿<h1>Assumptions</h1>
+
+<form @onsubmit:preventDefault="true">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Assumption</th>
+                <th>Does it hold?</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach((string assumption, bool? value) in AssumptionRegistry.Assumptions)
+            {
+                <tr>
+                    <td>@assumption</td>
+                    <td>
+                        <input type="checkbox" checked="@AssumptionRegistry.Evaluate(assumption)" @onchange="e => UpdateAssumption(assumption, (bool)e.Value)" @onchange:preventDefault="true" />
+                        
+                        @if (value.HasValue)
+                        {
+                            <span class="small text-text-muted">
+                                modified
+                                <a href="#" @onclick="_ =>  UpdateAssumption(assumption, null)" @onclick:preventDefault="true">Reset</a>
+                            </span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</form>
+
+
+@code {
+    [Parameter]
+    public Action UpdateTree { get; set; }
+
+    private void UpdateAssumption(string name, bool? value)
+    {
+        AssumptionRegistry.Assumptions[name] = value;
+        UpdateTree();
+    }
+}

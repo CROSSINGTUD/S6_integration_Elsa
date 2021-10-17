@@ -1,0 +1,214 @@
+﻿@using ComposableCrypto.CrySLGen
+@using System.Text
+@inject IToastService toastService
+@inject IJSRuntime JS
+
+@if (Component.Parent is null) // Root
+{
+    <AssumptionEditor UpdateTree="@UpdateTree" />
+
+    <h1>Components</h1>
+}
+
+<div class="node">
+    <div class="card" style="width: @(isExpanded ? 54 : 18)rem;">
+        <div class="card-body">
+            <h5 class="card-title">@Component.Description.DisplayName</h5>
+            <h6 class="card-subtitle mb-2 text-muted">@Component.Description.Type</h6>
+            <form @onsubmit:preventDefault="true">
+                <table class="table table-sm">
+                    <tbody>
+                        @foreach (var (p, cond) in Component.Description.Properties)
+                        {
+                            <tr>
+                                <td>
+                                    <input type="checkbox" checked="@Component.RequiredProperties.Contains(p)" @onchange="e => SetPropertyIsRequired(p, (bool)e.Value)" @onchange:preventDefault="true" />
+                                </td>
+                                <td>@p</td>
+                                <td>
+                                    @if (isExpanded)
+                                    {
+                                        <text>≡</text>
+                                        @((MarkupString) cond.ToHighlightedString(Component))
+                                    }
+                                </td>
+                                <td>@(cond.Evaluate(Component) ? "✔" : "❌")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </form>
+            <div>
+                @if (Component.Parent is not null)
+                {
+                    <button type="button" class="btn btn-danger btn-sm me-1" @onclick="OnRemove" @onclick:preventDefault="true">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                }
+                <button type="button" class="btn btn-secondary btn-sm me-1" @onclick="AutoComplete" @onclick:preventDefault="true">
+                    <i class="bi bi-stars"></i>
+                </button><button type="button" class="btn btn-dark btn-sm me-1" @onclick="AutoFixup" @onclick:preventDefault="true">
+                    <i class="bi bi-wrench"></i>
+                </button><button type="button" class="btn btn-info btn-sm me-1" @onclick="_ => isExpanded = !isExpanded" @onclick:preventDefault="true">
+                    @if (isExpanded)
+                    {
+                        <i class="bi bi-chevron-contract"></i>
+                    }
+                    else
+                    {
+                        <i class="bi bi-chevron-expand"></i>
+                    }
+                </button>
+                @if (Component.Parent is null && Component.Description.Children.Keys.All(k => Component.Children.TryGetValue(k, out Component c) && c is not null))
+                {
+                    <button type="button" class="btn btn-success btn-sm me-1" @onclick="GenerateCrySLRules" @onclick:preventDefault="true">
+                        Generate CrySL rules
+                    </button>
+                    @*<button type="button" class="btn btn-success btn-sm me-1" @onclick="GenerateCrySLTask" @onclick:preventDefault="true">
+                        Generate CrySL task
+                    </button>*@
+                    <button type="button" class="btn btn-success btn-sm me-1" @onclick="GenerateCode" @onclick:preventDefault="true">
+                        Show code
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm me-1" @onclick="InsertCodeIntoSourceFile" @onclick:preventDefault="true">
+                        Generate code
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="node-children">
+        @foreach(ChildDescription cd in Component.Description.Children.Values)
+        {
+            <div class="node-child">
+                <div class="edge">
+                    <div class="edge-label">
+                        @cd.DisplayName
+                    </div>
+                </div>
+                @if(Component.Children.TryGetValue(cd.Name, out Component component))
+                {
+                    <ComponentNode Component="@component" UpdateTree="UpdateTree" OnRemove="(() => RemoveChildComponent(cd.Name))" />
+                }
+                else
+                {
+                    <AddComponentNode Parent="@Component" Type="@cd.Type" OnAdd="(c => AddChildComponent(cd.Name, c))" />
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Component Component { get; set; }
+
+    [Parameter]
+    public Action OnRemove { get; set; }
+
+    [Parameter]
+    public Action UpdateTree { get; set; }
+
+    private bool isExpanded = false;
+
+    private void RemoveChildComponent(string name)
+    {
+        Component.Children.Remove(name);
+        UpdateTree();
+    }
+
+    private void AddChildComponent(string name, Component component)
+    {
+        Component.Children.Add(name, component);
+        UpdateTree();
+    }
+
+    private void SetPropertyIsRequired(string propertyName, bool value)
+    {
+        if (value)
+        {
+            Component.RequiredProperties.Add(propertyName);
+        }
+        else
+        {
+            Component.RequiredProperties.Remove(propertyName);
+        }
+    }
+
+    private void AutoComplete()
+    {
+        Console.WriteLine("Attempting to autocomplete...");
+        if (Component.AutoComplete())
+        {
+            Console.WriteLine("Autocompletion successful.");
+            UpdateTree();
+        }
+        else
+        {
+            Console.WriteLine("Could not autocomplete component.");
+            toastService.ShowWarning("Autocompletion was unable to find a solution that satisfies all constraints.");
+        }
+    }
+
+    private void AutoFixup()
+    {
+        Console.WriteLine("Attempting to auto-fixup...");
+        if (Component.AutoFixup())
+        {
+            Console.WriteLine("Auto-fixup successful.");
+            UpdateTree();
+        }
+        else
+        {
+            Console.WriteLine("Could not auto-fixup component.");
+            toastService.ShowWarning("Auto-fixup was unable to find a solution that satisfies all constraints.");
+        }
+    }
+
+    private async Task GenerateCrySLRules()
+    {
+        CrySLRuleGenerator generator = new(Component);
+        ICollection<Tuple<string, string>> files = generator.GenerateCrySLRules();
+        await JS.InvokeVoidAsync("exportDirectoryAsZip", files);
+        /*StringBuilder sb = new();
+        foreach (Tuple<string, string> file in files)
+        {
+            sb.AppendLine("---------------------");
+            sb.AppendLine(file.Item1);
+            sb.AppendLine("---------------------");
+            sb.AppendLine(file.Item2);
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.AppendLine();
+        }
+
+        await JS.InvokeVoidAsync("showTextPopup", sb.ToString());*/
+    }
+
+    private async Task GenerateCrySLTask()
+    {
+        CrySLTaskGenerator generator = new(Component);
+        await JS.InvokeVoidAsync("showTextPopup", generator.GenerateCrySLTask());
+    }
+
+    private async Task GenerateCode()
+    {
+        CodeGenerator generator = new CodeGenerator(Component);
+        await JS.InvokeVoidAsync("showTextPopup", generator.Generate());
+    }
+
+    private async Task InsertCodeIntoSourceFile()
+    {
+        CodeGenerator generator = new CodeGenerator(Component);
+        await JS.InvokeVoidAsync("insertGeneratedCodeIntoSourceFile", generator.Generate());
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (UpdateTree is null) // Root
+        {
+            UpdateTree = StateHasChanged;
+        }
+    }
+}

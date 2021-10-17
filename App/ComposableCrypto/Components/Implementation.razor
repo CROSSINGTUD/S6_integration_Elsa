@@ -1,0 +1,166 @@
+﻿@using System.IO
+@using System.Text.Json
+@inject IJSRuntime JS
+<h2>Implementation</h2>
+<button type="button" class="btn btn-primary" @onclick="GenerateAPISpecs" @onclick:preventDefault="true">Generate OpenAPI specs</button>
+
+@if (!string.IsNullOrEmpty(apiSet))
+{
+	<button type="button" class="btn btn-success" @onclick="DownloadAPISet" @onclick:preventDefault="true">Export API Set</button>
+
+	<h3>REST APIs</h3>
+	<table class="table table-bordered">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>
+					@*<button type="button" class="btn btn-light btn-sm">Download all</button>*@
+					Download
+				</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach ((string name, string openAPI) in apiSpecs)
+			{
+				<tr>
+					<td>@name</td>
+					<td><button type="button" class="btn btn-light btn-sm" @onclick="@(async () => await JS.InvokeVoidAsync("showTextPopup", openAPI))">Download</button></td>
+				</tr>
+			}
+		</tbody>
+	</table>
+
+	<h3>Computing nodes</h3>
+	<table class="table table-bordered">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Display name</th>
+				<th>Clients</th>
+				<th>Servers</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (string name in computingNodesDisplayNames.Keys)
+			{
+				<tr>
+					<td>@name</td>
+					<td>@computingNodesDisplayNames[name]</td>
+					<td>@string.Join(", ", computingNodesClients[name])</td>
+					<td>@string.Join(", ", computingNodesServers[name])</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
+
+<h3>Validate an API Set</h3>
+<form @onsubmit:preventDefault="true">
+    <InputFile OnChange="@LoadFile" accept="application/json" class="form-control" />
+</form>
+
+@if	(validationResult is not null)
+{
+	@if	(validationResult.Warnings.Count == 0 && validationResult.Errors.Count == 0)
+	{
+		<div class="alert alert-success" role="alert">
+			No warnings and no errors!
+		</div>
+	}
+	else
+	{
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th>Kind</th>
+					<th>Message</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (string warning in validationResult.Warnings)
+				{
+					<tr>
+						<td>Warning ⚠</td>
+						<td>@warning</td>
+					</tr>
+				}
+				@foreach (string error in validationResult.Warnings)
+				{
+					<tr>
+						<td>Error ❌</td>
+						<td>@error</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+}
+
+@code {
+	[Parameter]
+	public Component Component { get; set; }
+
+	private string apiSet;
+	private IDictionary<string, string> apiSpecs = new Dictionary<string, string>();
+	private IDictionary<string, string> computingNodesDisplayNames = new Dictionary<string, string>();
+	private IDictionary<string, IList<string>> computingNodesClients = new Dictionary<string, IList<string>>();
+	private IDictionary<string, IList<string>> computingNodesServers = new Dictionary<string, IList<string>>();
+	private SpecValidationResult validationResult;
+
+	class SpecValidationResult
+	{
+		public ICollection<string> Warnings { get; set; }
+		public ICollection<string> Errors { get; set; }
+	}
+
+	private async Task GenerateAPISpecs() {
+		apiSet = await JS.InvokeAsync<string>("generateSpecifications", Component.ToJson());
+
+		Console.WriteLine(apiSet);
+
+		apiSpecs.Clear();
+		computingNodesDisplayNames.Clear();
+		computingNodesClients.Clear();
+		computingNodesServers.Clear();
+
+
+		using JsonDocument document = JsonDocument.Parse(apiSet);
+		foreach (JsonProperty jsonProperty in document.RootElement.GetProperty("apis").EnumerateObject())
+		{
+			apiSpecs.Add(jsonProperty.Name, jsonProperty.Value.ToString());
+		}
+		foreach (JsonProperty jsonProperty in document.RootElement.GetProperty("computingNodes").EnumerateObject())
+		{
+			computingNodesDisplayNames.Add(jsonProperty.Name, jsonProperty.Value.GetProperty("displayName").GetString());
+			computingNodesClients.Add(jsonProperty.Name, jsonProperty.Value.GetProperty("clients").EnumerateArray().Select(c => c.GetString()).ToList());
+			computingNodesServers.Add(jsonProperty.Name, jsonProperty.Value.GetProperty("servers").EnumerateArray().Select(c => c.GetString()).ToList());
+		}
+	}
+
+	private async Task DownloadAPISet()
+	{
+		await JS.InvokeVoidAsync("showTextPopup", apiSet);
+	}
+
+	private async Task LoadFile(InputFileChangeEventArgs e)
+	{
+		try
+		{
+			using Stream stream = e.File.OpenReadStream();
+			using StreamReader streamReader = new StreamReader(stream);
+			string input = await streamReader.ReadToEndAsync();
+			string jsonValidationResult = await JS.InvokeAsync<string>("validateSpecification", Component.ToJson(), input);
+			Console.WriteLine(jsonValidationResult);
+			validationResult = JsonSerializer.Deserialize<SpecValidationResult>(jsonValidationResult, new JsonSerializerOptions
+			{
+				PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+			});
+			Console.WriteLine("Finished validation.");
+			// StateHasChanged();
+		}
+		catch (JSException)
+		{
+			await JS.InvokeVoidAsync("alert", "An error occurred while trying to validate the API Set.");
+		}
+	}
+}
