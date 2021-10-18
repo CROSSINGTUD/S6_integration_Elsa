@@ -116,21 +116,31 @@
         }
 
         window.validateSpecification = function (securitySolution, existingApiSet) {
-            console.log(existingApiSet);
+            try {
+                securitySolution = JSON.parse(securitySolution);
+                existingApiSet = JSON.parse(existingApiSet);
+                console.log(existingApiSet);
 
-            var warnings = [];
-            var errors = [];
-            var specGenerator = window.composableCrypto.specGenerators[securitySolution.name];
-            var result = null;
-            if (specGenerator) {
-                result = specGenerator.verify(window.composableCrypto.specGenerators, securitySolution.children, existingApiSet, warnings, errors);
-            } else {
-                result = {
-                    warnings: [],
-                    errors: []
-                };
+                var warnings = [];
+                var errors = [];
+                var specGenerator = window.composableCrypto.specGenerators[securitySolution.name];
+                var result = null;
+                if (specGenerator) {
+                    specGenerator.verify(window.composableCrypto.specGenerators, securitySolution.children, existingApiSet, warnings, errors);
+                    result = {
+                        warnings: warnings,
+                        errors: errors
+                    };
+                } else {
+                    result = {
+                        warnings: [],
+                        errors: []
+                    };
+                }
+                return JSON.stringify(result);
+            } catch (e) {
+                console.log(e);
             }
-            return JSON.stringify(result);
         }
     </script>
 
