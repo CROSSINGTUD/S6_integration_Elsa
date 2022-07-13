@@ -7,6 +7,7 @@ import java.io.OutputStream;
 
 public interface HashFunction extends CryptographicComponent {
     Hasher createHasher();
+    int getHashLengthInBytes();
 
     interface Hasher extends CryptographicOperation {
         OutputStream getOutputStream();

@@ -23,7 +23,7 @@ public interface CommitmentScheme extends CryptographicComponent {
         private final byte[] c;
         private final byte[] d;
 
-        CommitResult(byte[] c, byte[] d) {
+        public CommitResult(byte[] c, byte[] d) {
             this.c = c;
             this.d = d;
         }

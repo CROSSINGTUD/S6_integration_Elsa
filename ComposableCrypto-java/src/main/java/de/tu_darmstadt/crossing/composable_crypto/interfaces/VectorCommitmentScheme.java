@@ -16,7 +16,7 @@ public interface VectorCommitmentScheme extends CryptographicComponent {
     }
 
     interface Opener extends CryptographicComponent {
-        byte[] open(byte[][] decom, int index);
+        byte[] open(Decommitment decommitment, int index);
     }
 
     interface Verifier extends CryptographicOperation {
@@ -26,9 +26,9 @@ public interface VectorCommitmentScheme extends CryptographicComponent {
 
     class CommitResult {
         private final byte[] c;
-        private final byte[][] D;
+        private final Decommitment D;
 
-        public CommitResult(byte[] c, byte[][] d) {
+        public CommitResult(byte[] c, Decommitment d) {
             this.c = c;
             D = d;
         }
@@ -37,9 +37,13 @@ public interface VectorCommitmentScheme extends CryptographicComponent {
             return c;
         }
 
-        public byte[][] getDecommitment() {
+        public Decommitment getDecommitment() {
             return D;
         }
     }
 
+    // Decommitments are opaque since the only thing a user can do with it is to open it.
+    interface Decommitment {
+
+    }
 }

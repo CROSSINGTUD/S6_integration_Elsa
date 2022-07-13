@@ -50,7 +50,6 @@ namespace ComposableCrypto
                 .WithChild("Share", "Secret sharing scheme", "secret-sharing-scheme")
                 .WithChild("Signature", "Signature scheme", "signature-scheme")
                 .WithChild("VC", "Vector commitment scheme", "vector-commitment-scheme")
-                .WithChild("Channel", "Secure channel", "secure-channel")
                 .WithChild("Timestamp", "Timestamp scheme", "timestamp-scheme")
                 .WithProperty("ensures-unforgeability",
                     And.Of(
@@ -114,7 +113,8 @@ namespace ComposableCrypto
                 .Name("Remote_interactive_Signature_based_Timestamp")
                 .DisplayName("Remote interactive signature-based timestamp")
                 .WithChild("Signature", "Signature scheme", "signature-scheme")
-                .WithProperty("ensures-unforgeability", new ChildPropertyCondition("Signature", "ensures-unforgeability"))
+                .WithChild("Hash", "Hash function", "hash-function")
+                .WithProperty("ensures-unforgeability", new And(new ChildPropertyCondition("Signature", "ensures-unforgeability"), new ChildPropertyCondition("Hash", "collision-resistant")))
                 .Build()
             );
 
@@ -123,20 +123,21 @@ namespace ComposableCrypto
                 .Name("Remote_non_interactive_Signature_based_Timestamp")
                 .DisplayName("Remote non-interactive signature-based timestamp")
                 .WithChild("Signature", "Signature scheme", "signature-scheme")
-                .WithProperty("ensures-unforgeability", new ChildPropertyCondition("Signature", "ensures-unforgeability"))
+                .WithChild("Hash", "Hash function", "hash-function")
+                .WithProperty("ensures-unforgeability", new And(new ChildPropertyCondition("Signature", "ensures-unforgeability"), new ChildPropertyCondition("Hash", "collision-resistant")))
                 .Build()
             );
 
-            ComponentRegistry.RegisterComponent(ComponentDescription.Builder()
-                .Type("secure-channel")
-                .Name("TLS13")
-                .DisplayName("TLS 1.3")
-                .WithProperty("ensures-integrity", Condition.TRUE)
-                .WithProperty("ensures-confidentiality", Condition.TRUE)
-                .WithProperty("ensures-authenticity", Condition.TRUE)
-                .WithProperty("ensures-inf-th-confidentiality", new AssumptionCondition("model-tls-as-secure-channel"))
-                .Build()
-            );
+            //ComponentRegistry.RegisterComponent(ComponentDescription.Builder()
+            //    .Type("secure-channel")
+            //    .Name("TLS13")
+            //    .DisplayName("TLS 1.3")
+            //    .WithProperty("ensures-integrity", Condition.TRUE)
+            //    .WithProperty("ensures-confidentiality", Condition.TRUE)
+            //    .WithProperty("ensures-authenticity", Condition.TRUE)
+            //    .WithProperty("ensures-inf-th-confidentiality", new AssumptionCondition("model-tls-as-secure-channel"))
+            //    .Build()
+            //);
 
             ComponentRegistry.RegisterComponent(ComponentDescription.Builder()
                 .Type("vector-commitment-scheme")

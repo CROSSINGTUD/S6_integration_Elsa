@@ -1,11 +1,15 @@
 plugins {
-    id 'java'
+    id 'java-library'
+    id 'maven-publish'
 }
 
 group 'de.tu_darmstadt.crossing'
-version '1.0-SNAPSHOT'
+version '1.0.0-SNAPSHOT'
 
 repositories {
+    maven {
+        url "https://julius-hardt.de/nexus/repository/maven-snapshots/"
+    }
     mavenCentral()
 }
 
@@ -15,10 +19,31 @@ java {
 }
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
+    implementation 'org.apache.commons:commons-collections4:4.4'
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'de.julius_hardt.crypto:sss-java:1.0.1-SNAPSHOT'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
 test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            name = "MyRepo" //  optional target repository name
+            url = "https://julius-hardt.de/nexus/repository/maven-snapshots/"
+            credentials {
+                username = "$mavenUser"
+                password = "$mavenPassword"
+            }
+        }
+    }
 }

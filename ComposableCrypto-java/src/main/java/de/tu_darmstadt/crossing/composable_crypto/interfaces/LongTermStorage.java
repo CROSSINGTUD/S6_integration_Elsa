@@ -41,7 +41,7 @@ public interface LongTermStorage extends CryptographicComponent {
         Iterable<UUID> getAllItemIDs();
         Iterable<EvidenceItem> getProofOfIntegrity(UUID itemID);
         void addCommitment(Collection<UUID> itemIDs, String vectorCommitmentScheme, byte[] commitment, String timestampService);
-        void addCommitmentRenew(String vectorCommitmentScheme, byte[] commitment, String timestampService);
+        void renewTimestamps();
     }
 
     interface Shareholder {
@@ -66,6 +66,15 @@ public interface LongTermStorage extends CryptographicComponent {
             this.timeStampService = timeStampService;
             this.timestamp = timestamp;
             this.time = time;
+        }
+
+        public EvidenceItem(EvidenceItem itemToCopy) {
+            this.vectorCommitmentScheme = itemToCopy.vectorCommitmentScheme;
+            this.commitment = itemToCopy.commitment;
+            this.decommitment = itemToCopy.decommitment;
+            this.timeStampService = itemToCopy.timeStampService;
+            this.timestamp = itemToCopy.timestamp;
+            this.time = itemToCopy.time;
         }
 
         public String getVectorCommitmentScheme() {

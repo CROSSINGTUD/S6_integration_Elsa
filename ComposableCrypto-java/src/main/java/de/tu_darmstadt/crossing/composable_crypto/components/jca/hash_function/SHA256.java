@@ -80,4 +80,9 @@ public class SHA256 implements HashFunction {
             }
         };
     }
+
+    @Override
+    public int getHashLengthInBytes() {
+        return 256 / 8;
+    }
 }
